@@ -593,7 +593,7 @@ class ImapSource extends DataSource {
 	 * Tries to parse mail & name data from Mail object for to, from, etc.
 	 * Gracefully degrades where needed
 	 *
-	 * Type: to, from, sender, reply_to
+	 * Type: to, cc, bcc, from, sender, reply_to
 	 * Need: box, name, host, address, full
 	 *
 	 * @param object $Mail
@@ -606,36 +606,44 @@ class ImapSource extends DataSource {
 		if ($type === 'sender' && !isset($Mail->sender)) {
 			$type = 'from';
 		}
-
-		$info['box'] = '';
-		if (isset($Mail->{$type}[0]->mailbox)) {
-			$info['box'] = $Mail->{$type}[0]->mailbox;
-		}
-		$info['name'] = $info['box'];
-		if (isset($Mail->{$type}[0]->personal)) {
-			$info['name'] = $Mail->{$type}[0]->personal;
+		if (!isset($Mail->{$type})) {
+			return array();
 		}
 
-		$info['host'] = '';
-		if (isset($Mail->{$type}[0]->host)) {
-			$info['host'] = $Mail->{$type}[0]->host;
-		}
+		$results = array();
+		foreach ($Mail->{$type} as $person) {
+			$info = array(
+				'box' => '',
+				'host' => '',
+				'address' => '',
+			);
 
-		$info['address'] = '';
-		if ($info['box'] && $info['host']) {
-			$info['address'] = $info['box'] . '@' . $info['host'];
-		}
+			if (isset($person->mailbox)) {
+				$info['box'] = $person->mailbox;
+			}
+			if (isset($person->host)) {
+				$info['host'] = $person->host;
+			}
+			if ($info['box'] && $info['host']) {
+				$info['address'] = $info['box'] . '@' . $info['host'];
+			}
 
-		$info['full'] = $info['address'];
-		if ($info['name']) {
-			$info['full'] = sprintf('"%s" <%s>', $info['name'], $info['address']);
+			$info['name'] = $info['box'];
+			if (isset($person->personal)) {
+				$info['name'] = $person->personal;
+			}
+			$info['full'] = $info['address'];
+			if ($info['name']) {
+				$info['full'] = sprintf('"%s" <%s>', $info['name'], $info['address']);
+			}
+
+			$results[] = $info;
 		}
 
 		if ($need !== null) {
-			return $info[$need];
+			return $results[0][$need];
 		}
-
-		return $info;
+		return $results;
 	}
 
 	/**
@@ -686,8 +694,6 @@ class ImapSource extends DataSource {
 			'message_id' => $Mail->message_id,
 			'email_number' => $Mail->Msgno,
 
-			'to' => $this->_personId($Mail, 'to', 'address'),
-			'to_name' => $this->_personId($Mail, 'to', 'name'),
 			'from' => $this->_personId($Mail, 'from', 'address'),
 			'from_name' => $this->_personId($Mail, 'from', 'name'),
 			'reply_to' => $this->_personId($Mail, 'reply_to', 'address'),
@@ -715,6 +721,9 @@ class ImapSource extends DataSource {
 			'new' => (int)@$Mail->in_reply_to,
 			'created' => date('Y-m-d H:i:s', strtotime($Mail->date)),
 		);
+		$return['Recipient'] = $this->_personId($Mail, 'to');
+		$return['RecipientCopy'] = $this->_personId($Mail, 'cc');
+		$return['RecipientCarbonCopy'] = $this->_personId($Mail, 'bcc');
 
 		if ($fetchAttachments) {
 			$return['Attachment'] = $this->_fetchAttachments($flatStructure, $Model);
