@@ -737,7 +737,7 @@ class ImapSource extends DataSource {
 		);
 		$return['Recipient'] = $this->_personId($Mail, 'to');
 		$return['RecipientCopy'] = $this->_personId($Mail, 'cc');
-		$return['RecipientCarbonCopy'] = $this->_personId($Mail, 'bcc');
+		$return['RecipientBlindCopy'] = $this->_personId($Mail, 'bcc');
 
 		if ($fetchAttachments) {
 			$return['Attachment'] = $this->_fetchAttachments($flatStructure, $Model);
