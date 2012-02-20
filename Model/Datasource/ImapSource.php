@@ -630,7 +630,7 @@ class ImapSource extends DataSource {
 
 			$info['name'] = $info['box'];
 			if (isset($person->personal)) {
-				$info['name'] = $person->personal;
+				$info['name'] = $this->_decode($person->personal);
 			}
 			$info['full'] = $info['address'];
 			if ($info['name']) {
@@ -644,6 +644,20 @@ class ImapSource extends DataSource {
 			return $results[0][$need];
 		}
 		return $results;
+	}
+
+	/**
+	 * Decode text to the application encoding
+	 *
+	 * @param string $text
+	 */
+	protected function _decode($text) {
+		$text = imap_utf8($text);
+		$encoding = Configure::read('App.encoding');
+		if ($encoding !== 'UTF-8') {
+			$text = mb_convert_encoding($text, $encoding, 'UTF-8');
+		}
+		return $text;
 	}
 
 	/**
