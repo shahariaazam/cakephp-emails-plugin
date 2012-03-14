@@ -652,11 +652,24 @@ class ImapSource extends DataSource {
 	 * @param string $text
 	 */
 	protected function _decode($text) {
-		$text = imap_utf8($text);
-		$encoding = Configure::read('App.encoding');
-		if ($encoding !== 'UTF-8') {
-			$text = mb_convert_encoding($text, $encoding, 'UTF-8');
+		if (is_object($text)) {
+			$decoded = $text;
+			$text = $decoded->text;
+		} else {
+			$decoded = imap_mime_header_decode($text);
+			$decoded = $decoded[0];
 		}
+
+		if (empty($decoded) || empty($decoded->text) || $decoded->charset === 'default') {
+			return $text;
+		}
+		$text = $decoded->text;
+
+		$encoding = Configure::read('App.encoding');
+		if ($encoding !== $decoded->charset) {
+			$text = mb_convert_encoding($text, $encoding, $decoded->charset);
+		}
+
 		return $text;
 	}
 
@@ -920,7 +933,21 @@ class ImapSource extends DataSource {
 	protected function _fetchFirstByMime ($flatStructure, $mime_type) {
 		foreach ($flatStructure as $path => $Part) {
 			if ($mime_type === $Part->mimeType) {
-				return $this->_fetchPart($Part);
+				$text = $this->_fetchPart($Part);
+				if (empty($Part->parameters)) {
+					return $text;
+				}
+				
+				foreach ($Part->parameters as $param) {
+					if ($param->attribute !== 'charset') {
+						continue;
+					}
+					$params = (object) array(
+						'charset' => $param->value,
+						'text' => $text,
+					);
+					return $this->_decode($params);
+				}
 			}
 		}
 	}
