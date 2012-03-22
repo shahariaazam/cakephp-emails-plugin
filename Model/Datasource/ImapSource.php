@@ -663,7 +663,7 @@ class ImapSource extends DataSource {
 		if (empty($decoded) || empty($decoded->text) || $decoded->charset === 'default') {
 			return $text;
 		}
-		$text = $decoded->text;
+		$text = imap_qprint($decoded->text);
 
 		$encoding = Configure::read('App.encoding');
 		if ($encoding !== $decoded->charset) {
