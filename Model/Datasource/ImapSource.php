@@ -342,12 +342,22 @@ class ImapSource extends DataSource {
 	 * @return array
 	 */
 	protected function _makeOrder($Model, $query) {
+		$criterias = array('date', 'arrival', 'from', 'subject', 'to', 'cc', 'size');
 
-		// Tranform order criteria
-		$orderReverse  = 1;
-		$orderCriteria = SORTDATE;
+		$order = array(1, SORTDATE);			
+		if (empty($query['order']) || empty($query['order'][0])) {
+			return $order;
+		}
 
-		return array($orderReverse, $orderCriteria);
+		foreach ($query['order'][0] as $key => $dir) {
+			if (in_array($key, $criterias)) {
+				return array(
+					(strtoupper($dir) === 'ASC') ? 0 : 1,
+					constant('SORT' . strtoupper($key))
+				);
+			}
+		}
+		return $order;
 	}
 
 	public function delete ($Model, $conditions = null) {
@@ -587,6 +597,35 @@ class ImapSource extends DataSource {
 			return $lastError;
 		}
 		return false;
+	}
+
+	/**
+	 * Update the email setting flags
+	 *
+	 */
+	public function update(Model $model, $fields = null, $values = null) {
+		if (empty($model->id)) {
+			return $this->err($model, 'Cannot update a record without id');
+		}
+		
+		$flags = array('recent', 'seen', 'flagged', 'answered', 'draft', 'deleted');
+		$data = array_combine($fields, $values);
+		foreach ($data as $field => $value) {
+			if (!in_array($field, $flags)) {
+				continue;
+			}
+			$flag = '\\' . ucfirst($field);
+			if ($value === true || $value === 1 || $value === '1') {
+				if (!imap_setflag_full($this->Stream, $model->id, $flag, ST_UID)) {
+					$this->err($model, 'Unable to mark email %s as %s', $model->id, $flag);
+				}
+			} else {
+				if (!imap_clearflag_full($this->Stream, $model->id, $flag, ST_UID)) {
+					$this->err($model, 'Unable to unmark email %s as %s', $model->id, $flag);
+				}
+			}
+		}
+		return true;
 	}
 
 	/**
