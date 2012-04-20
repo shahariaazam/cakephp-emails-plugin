@@ -807,7 +807,7 @@ class ImapSource extends DataSource {
 	}
 
 	protected function _awesomePart($Part, $uid) {
-		if (!($Part->format = @$this->encodingTypes[$Part->type])) {
+		if (!($Part->format = @$this->encodingTypes[$Part->encoding])) {
 			$Part->format = $this->encodingTypes[0];
 		}
 
@@ -817,7 +817,7 @@ class ImapSource extends DataSource {
 
 		$Part->mimeType = strtolower($Part->datatype . '/' . $Part->subtype);
 
-		$Part->is_attachment = false;
+		$Part->is_attachment = (!empty($Part->disposition) && $Part->disposition === 'attachment');
 		$Part->filename      = '';
 		$Part->name          = '';
 		$Part->uid           = $uid;
@@ -825,8 +825,7 @@ class ImapSource extends DataSource {
 		if ($Part->ifdparameters) {
 			foreach ($Part->dparameters as $Object) {
 				if (strtolower($Object->attribute) === 'filename') {
-					#$Part->is_attachment = true;
-					$Part->filename      = $Object->value;
+					$Part->filename = $Object->value;
 				}
 			}
 		}
@@ -834,14 +833,9 @@ class ImapSource extends DataSource {
 		if ($Part->ifparameters) {
 			foreach ($Part->parameters as $Object) {
 				if (strtolower($Object->attribute) === 'name') {
-					#$Part->is_attachment = true;
-					$Part->name          = $Object->value;
+					$Part->name = $Object->value;
 				}
 			}
-		}
-
-		if (false !== strpos($Part->path, '.')) {
-			$Part->is_attachment = true;
 		}
 
 		return $Part;
