@@ -707,8 +707,9 @@ class ImapSource extends DataSource {
 		$app_encoding  = Configure::read('App.encoding');
 		$mail_encoding = $decoded->charset;
 		$encodings     = mb_list_encodings();
-		if ($app_encoding !== $mail_encoding) {
-			if (!in_array($mail_encoding, $encodings)) {
+		$valid         = true;
+		if ($app_encoding !== $mail_encoding || !($valid = mb_check_encoding($text, $mail_encoding))) {
+			if (!in_array($mail_encoding, $encodings) || !$valid) {
 				$mail_encoding = mb_detect_encoding($text);
 			}
 			if (!in_array($app_encoding, $encodings)) {
