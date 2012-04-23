@@ -704,9 +704,18 @@ class ImapSource extends DataSource {
 		}
 		$text = imap_qprint($decoded->text);
 
-		$encoding = Configure::read('App.encoding');
-		if ($encoding !== $decoded->charset) {
-			$text = mb_convert_encoding($text, $encoding, $decoded->charset);
+		$app_encoding  = Configure::read('App.encoding');
+		$mail_encoding = $decoded->charset;
+		$encodings     = mb_list_encodings();
+		if ($app_encoding !== $mail_encoding) {
+			if (!in_array($mail_encoding, $encodings)) {
+				$mail_encoding = mb_detect_encoding($text);
+			}
+			if (!in_array($app_encoding, $encodings)) {
+				$app_encoding = 'UTF-8';
+			}
+
+			$text = mb_convert_encoding($text, $app_encoding, $mail_encoding);
 		}
 
 		return $text;
