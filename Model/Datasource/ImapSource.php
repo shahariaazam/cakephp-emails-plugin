@@ -81,8 +81,8 @@ class ImapSource extends DataSource {
 
 		'subject' => array('type' => 'string', 'default' => NULL, 'length' => 255,),
 		'slug' => array('type' => 'string', 'default' => NULL, 'length' => 255,),
-		'body' => array('type' => 'text', 'default' => NULL,),
-		'plainmsg' => array('type' => 'text', 'default' => NULL,),
+		'body_html' => array('type' => 'text', 'default' => NULL,),
+		'body_text' => array('type' => 'text', 'default' => NULL,),
 		'size' => array('type' => 'string', 'default' => NULL, 'length' => 255,),
 
 		'recent' => array('type' => 'boolean', 'default' => NULL, 'length' => 1,),
@@ -762,8 +762,8 @@ class ImapSource extends DataSource {
 			);
 		}
 
-		$plain = $this->_fetchFirstByMime($flatStructure, 'text/plain');
-		$html  = $this->_fetchFirstByMime($flatStructure, 'text/html');
+		$text = $this->_fetchFirstByMime($flatStructure, 'text/plain');
+		$html = $this->_fetchFirstByMime($flatStructure, 'text/html');
 
 		$return[$Model->alias] = array(
 			'id' => $this->_toId($uid),
@@ -780,8 +780,8 @@ class ImapSource extends DataSource {
 			'subject' => htmlspecialchars(@$Mail->subject),
 			'slug' => Inflector::slug(@$Mail->subject, '-'),
 			'header' => @imap_fetchheader($this->Stream, $uid, FT_UID),
-			'body' => $html,
-			'plainmsg' => $plain ? $plain : $html,
+			'body_html' => $html,
+			'body_text' => $text,
 			'size' => @$Mail->Size,
 
 			'recent' => @$Mail->Recent === 'R' ? 1 : 0,
