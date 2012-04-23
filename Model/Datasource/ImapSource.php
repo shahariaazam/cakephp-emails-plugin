@@ -977,6 +977,10 @@ class ImapSource extends DataSource {
 		foreach ($flatStructure as $path => $Part) {
 			if ($mime_type === $Part->mimeType) {
 				$text = $this->_fetchPart($Part);
+				if ($Part->format === 'base64') {
+					$text = base64_decode($text);
+				}
+
 				if (empty($Part->parameters)) {
 					return $text;
 				}
