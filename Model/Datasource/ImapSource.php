@@ -981,10 +981,12 @@ class ImapSource extends DataSource {
 					$text = base64_decode($text);
 				}
 
+				// No parameters, no charset to decode
 				if (empty($Part->parameters)) {
 					return $text;
 				}
 				
+				// Try decode using the charset provided
 				foreach ($Part->parameters as $param) {
 					if ($param->attribute !== 'charset') {
 						continue;
@@ -995,6 +997,9 @@ class ImapSource extends DataSource {
 					);
 					return $this->_decode($params);
 				}
+
+				// Fallback to original text
+				return $text;
 			}
 		}
 	}
