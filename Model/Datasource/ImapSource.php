@@ -826,11 +826,9 @@ class ImapSource extends DataSource {
 		}
 
 		$Part->mimeType = strtolower($Part->datatype . '/' . $Part->subtype);
-
-		$Part->is_attachment = (!empty($Part->disposition) && $Part->disposition === 'attachment');
-		$Part->filename      = '';
-		$Part->name          = '';
-		$Part->uid           = $uid;
+		$Part->filename = '';
+		$Part->name     = '';
+		$Part->uid      = $uid;
 
 		if ($Part->ifdparameters) {
 			foreach ($Part->dparameters as $Object) {
@@ -847,6 +845,8 @@ class ImapSource extends DataSource {
 				}
 			}
 		}
+
+		$Part->is_attachment = (!empty($Part->disposition) && !empty($Part->filename) && in_array($Part->disposition, array('attachment', 'inline')));
 
 		return $Part;
 	}
