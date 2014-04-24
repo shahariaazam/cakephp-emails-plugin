@@ -360,7 +360,7 @@ class ImapSource extends DataSource {
 		return $order;
 	}
 
-	public function delete ($Model, $conditions = null) {
+	public function delete (Model $Model, $conditions = null) {
 		$query          = compact('conditions');
 		$searchCriteria = $this->_makeSearch($Model, $query);
 		$uids           = $this->_uidsByCriteria($searchCriteria);
@@ -395,7 +395,7 @@ class ImapSource extends DataSource {
 	 *
 	 * @return the data requested by the model
 	 */
-	public function read ($Model, $query) {
+	public function read (Model $Model, $query = array(), $recursive = NULL) {
 		if (!$this->connect($Model, $query)) {
 			return $this->err($Model, 'Cannot connect to server');
 		}
@@ -603,7 +603,7 @@ class ImapSource extends DataSource {
 	 * Update the email setting flags
 	 *
 	 */
-	public function update(Model $model, $fields = null, $values = null) {
+	public function update(Model $model, $fields = NULL, $values = NULL, $conditions = null) {
 		if (empty($model->id)) {
 			return $this->err($model, 'Cannot update a record without id');
 		}
